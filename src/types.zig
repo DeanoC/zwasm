@@ -258,8 +258,7 @@ pub const WasmModule = struct {
 
             for (opts.preopen_paths, 0..) |path, i| {
                 const fd: i32 = @intCast(3 + i);
-                const host_fd = std.posix.open(path, .{ .ACCMODE = .RDONLY }, 0) catch continue;
-                try wc.addPreopen(fd, path, host_fd);
+                wc.addPreopenPath(fd, path, path) catch continue;
             }
         }
 
@@ -287,8 +286,7 @@ pub const WasmModule = struct {
 
             for (opts.preopen_paths, 0..) |path, ii| {
                 const fd: i32 = @intCast(3 + ii);
-                const host_fd = std.posix.open(path, .{ .ACCMODE = .RDONLY }, 0) catch continue;
-                try wc.addPreopen(fd, path, host_fd);
+                wc.addPreopenPath(fd, path, path) catch continue;
             }
         }
 
