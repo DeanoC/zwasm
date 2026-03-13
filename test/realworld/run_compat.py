@@ -70,8 +70,10 @@ def main() -> int:
             if "hello_wasi" in name or name == "tinygo_hello":
                 extra_args = ["arg1", "arg2"]
             if "file_io" in name:
+                guest_file = tmp_dir / "zwasm_test_file_io.txt"
                 wt_extra = ["--dir", str(tmp_dir)]
                 zw_extra += ["--dir", str(tmp_dir)]
+                extra_args = [str(guest_file)]
 
             wt_exit, wt_out, wt_err = run_process([wasmtime, "run", *wt_extra, str(wasm), *extra_args])
             zw_exit, zw_out, zw_err = run_process([str(zwasm), "run", *zw_extra, str(wasm), *extra_args])
