@@ -165,10 +165,22 @@ jobs:
           curl -L -o "${{ runner.temp }}/wasi-sdk.tar.gz" \
             "https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_SDK_VERSION}/${ARCHIVE}"
           if [ "${{ runner.os }}" = "Windows" ]; then
-            pwsh -NoLogo -NoProfile -Command "& {
-              New-Item -ItemType Directory -Force -Path '${{ runner.temp }}\\wasi-sdk' | Out-Null
-              tar -xzf '${{ runner.temp }}\\wasi-sdk.tar.gz' -C '${{ runner.temp }}\\wasi-sdk' --strip-components=1
-            }"
+            python - <<'PY'
+import pathlib
+import tarfile
+
+archive = pathlib.Path(r"${{ runner.temp }}\wasi-sdk.tar.gz")
+dest = pathlib.Path(r"${{ runner.temp }}\wasi-sdk")
+dest.mkdir(parents=True, exist_ok=True)
+
+with tarfile.open(archive, "r:gz") as tf:
+    for member in tf.getmembers():
+        parts = pathlib.PurePosixPath(member.name).parts
+        if len(parts) <= 1:
+            continue
+        member.name = str(pathlib.PurePosixPath(*parts[1:]))
+        tf.extract(member, dest)
+PY
           else
             mkdir -p "${{ runner.temp }}/wasi-sdk"
             tar xzf "${{ runner.temp }}/wasi-sdk.tar.gz" -C "${{ runner.temp }}/wasi-sdk" --strip-components=1
