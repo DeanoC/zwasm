@@ -2,7 +2,7 @@ use std::fs;
 use std::io::Write;
 
 fn main() {
-    let path = "/tmp/zwasm_test_file_io.txt";
+    let path = "zwasm_test_file_io.txt";
     let content = "Hello from Rust/WASI file I/O!\nLine 2\nLine 3\n";
 
     // Write
