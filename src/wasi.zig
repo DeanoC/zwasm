@@ -1251,7 +1251,10 @@ pub fn path_open(ctx: *anyopaque, _: usize) anyerror!void {
                 try pushErrno(vm, toWasiErrno(err2));
                 return;
             };
-            const new_fd = wasi.allocFd(ro_fd) catch {
+            const new_fd = wasi.allocFd(.{
+                .raw = ro_fd,
+                .kind = if (flags.DIRECTORY) .dir else .file,
+            }, flags.APPEND) catch {
                 posix.close(ro_fd);
                 try pushErrno(vm, .NOMEM);
                 return;
@@ -1266,7 +1269,10 @@ pub fn path_open(ctx: *anyopaque, _: usize) anyerror!void {
         return;
     };
 
-    const new_fd = wasi.allocFd(host_fd) catch {
+    const new_fd = wasi.allocFd(.{
+        .raw = host_fd,
+        .kind = if (flags.DIRECTORY) .dir else .file,
+    }, flags.APPEND) catch {
         posix.close(host_fd);
         try pushErrno(vm, .NOMEM);
         return;
@@ -1816,8 +1822,11 @@ pub fn fd_pread(ctx: *anyopaque, _: usize) anyerror!void {
         return;
     }
 
-    const wasi = getWasi(vm);
-    const host_fd: posix.fd_t = if (wasi) |w| w.getHostFd(fd) orelse {
+    const wasi = getWasi(vm) orelse {
+        try pushErrno(vm, .BADF);
+        return;
+    };
+    const host_fd: posix.fd_t = wasi.getHostFd(fd) orelse {
         try pushErrno(vm, .BADF);
         return;
     };
@@ -1893,8 +1902,11 @@ pub fn fd_pwrite(ctx: *anyopaque, _: usize) anyerror!void {
         return;
     }
 
-    const wasi = getWasi(vm);
-    const host_fd: posix.fd_t = if (wasi) |w| w.getHostFd(fd) orelse {
+    const wasi = getWasi(vm) orelse {
+        try pushErrno(vm, .BADF);
+        return;
+    };
+    const host_fd: posix.fd_t = wasi.getHostFd(fd) orelse {
         try pushErrno(vm, .BADF);
         return;
     };
@@ -1993,6 +2005,7 @@ pub fn fd_renumber(ctx: *anyopaque, _: usize) anyerror!void {
         try pushErrno(vm, .BADF);
         return;
     };
+    const append = if (wasi.getFdEntry(fd_from)) |entry| entry.append else false;
 
     // Close destination fd if open
     _ = wasi.closeFd(fd_to);
@@ -2010,17 +2023,26 @@ pub fn fd_renumber(ctx: *anyopaque, _: usize) anyerror!void {
     if (fd_to >= wasi.fd_base) {
         const idx: usize = @intCast(fd_to - wasi.fd_base);
         if (idx < wasi.fd_table.items.len) {
-            wasi.fd_table.items[idx] = .{ .host_fd = new_host };
+            wasi.fd_table.items[idx] = .{
+                .host = .{ .raw = new_host, .kind = .file },
+                .append = append,
+            };
         } else {
             // Extend table to fit
             while (wasi.fd_table.items.len < idx) {
-                wasi.fd_table.append(wasi.alloc, .{ .host_fd = 0, .is_open = false }) catch {
+                wasi.fd_table.append(wasi.alloc, .{
+                    .host = .{ .raw = undefined, .kind = .file },
+                    .is_open = false,
+                }) catch {
                     posix.close(new_host);
                     try pushErrno(vm, .NOMEM);
                     return;
                 };
             }
-            wasi.fd_table.append(wasi.alloc, .{ .host_fd = new_host }) catch {
+            wasi.fd_table.append(wasi.alloc, .{
+                .host = .{ .raw = new_host, .kind = .file },
+                .append = append,
+            }) catch {
                 posix.close(new_host);
                 try pushErrno(vm, .NOMEM);
                 return;

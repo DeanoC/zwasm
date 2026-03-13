@@ -155,11 +155,11 @@ fn protectionToWin(prot: Protection) windows.DWORD {
     };
 }
 
-fn protectionToPosix(prot: Protection) std.posix.PROT {
+fn protectionToPosix(prot: Protection) u32 {
     return switch (prot) {
-        .none => std.posix.PROT.NONE,
-        .read_write => std.posix.PROT.READ | std.posix.PROT.WRITE,
-        .read_exec => std.posix.PROT.READ | std.posix.PROT.EXEC,
+        .none => @intCast(std.posix.PROT.NONE),
+        .read_write => @intCast(std.posix.PROT.READ | std.posix.PROT.WRITE),
+        .read_exec => @intCast(std.posix.PROT.READ | std.posix.PROT.EXEC),
     };
 }
 
