@@ -104,7 +104,8 @@ fn printUsage(w: *std.Io.Writer) void {
         \\  --invoke <func>     Call <func> instead of _start
         \\  --batch             Batch mode: read invocations from stdin
         \\  --link name=file    Link a module as import source (repeatable)
-        \\  --dir <path>        Preopen a host directory (repeatable)
+        \\  --dir <host[::guest]>
+        \\                     Preopen a host directory, optionally at a guest path
         \\  --env KEY=VALUE     Set a WASI environment variable (repeatable)
         \\  --profile           Print execution profile (opcode frequency, call counts)
         \\  --sandbox           Deny all capabilities + fuel 1B + memory 256MB

@@ -185,6 +185,17 @@ pub const WasiOptions = struct {
     caps: rt.wasi.Capabilities = rt.wasi.Capabilities.cli_default,
 };
 
+fn splitPreopenSpec(spec: []const u8) struct { host: []const u8, guest: []const u8 } {
+    if (std.mem.indexOf(u8, spec, "::")) |sep| {
+        const host = spec[0..sep];
+        const guest = spec[sep + 2 ..];
+        if (host.len != 0 and guest.len != 0) {
+            return .{ .host = host, .guest = guest };
+        }
+    }
+    return .{ .host = spec, .guest = spec };
+}
+
 // ============================================================
 // WasmModule — loaded and instantiated Wasm module
 // ============================================================
@@ -258,7 +269,8 @@ pub const WasmModule = struct {
 
             for (opts.preopen_paths, 0..) |path, i| {
                 const fd: i32 = @intCast(3 + i);
-                wc.addPreopenPath(fd, path, path) catch continue;
+                const spec = splitPreopenSpec(path);
+                wc.addPreopenPath(fd, spec.guest, spec.host) catch continue;
             }
         }
 
@@ -286,7 +298,8 @@ pub const WasmModule = struct {
 
             for (opts.preopen_paths, 0..) |path, ii| {
                 const fd: i32 = @intCast(3 + ii);
-                wc.addPreopenPath(fd, path, path) catch continue;
+                const spec = splitPreopenSpec(path);
+                wc.addPreopenPath(fd, spec.guest, spec.host) catch continue;
             }
         }
 

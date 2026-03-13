@@ -71,9 +71,10 @@ def main() -> int:
                 extra_args = ["arg1", "arg2"]
             if "file_io" in name:
                 guest_file = tmp_dir / "zwasm_test_file_io.txt"
-                wt_extra = ["--dir", str(tmp_dir)]
-                zw_extra += ["--dir", str(tmp_dir)]
-                extra_args = [str(guest_file)]
+                guest_dir = "/sandbox"
+                wt_extra = ["--dir", f"{tmp_dir}::{guest_dir}"]
+                zw_extra += ["--dir", f"{tmp_dir}::{guest_dir}"]
+                extra_args = [f"{guest_dir}/{guest_file.name}"]
 
             wt_exit, wt_out, wt_err = run_process([wasmtime, "run", *wt_extra, str(wasm), *extra_args])
             zw_exit, zw_out, zw_err = run_process([str(zwasm), "run", *zw_extra, str(wasm), *extra_args])
