@@ -1481,7 +1481,8 @@ fn cmdBatch(allocator: Allocator, wasm_bytes: []const u8, imports: []const types
             };
             // Buffer invocations until thread_end
             while (true) {
-                const tline = r.takeDelimiter('\n') catch break orelse break;
+                const raw_tline = r.takeDelimiter('\n') catch break orelse break;
+                const tline = std.mem.trimRight(u8, raw_tline, "\r");
                 if (std.mem.eql(u8, tline, "thread_end")) break;
                 if (!std.mem.startsWith(u8, tline, "invoke ")) continue;
                 // Parse: invoke <len>:<func> [args...]
