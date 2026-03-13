@@ -166,20 +166,20 @@ jobs:
             "https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_SDK_VERSION}/${ARCHIVE}"
           if [ "${{ runner.os }}" = "Windows" ]; then
             python - <<'PY'
-import pathlib
-import tarfile
+            import pathlib
+            import tarfile
 
-archive = pathlib.Path(r"${{ runner.temp }}\wasi-sdk.tar.gz")
-dest = pathlib.Path(r"${{ runner.temp }}\wasi-sdk")
-dest.mkdir(parents=True, exist_ok=True)
+            archive = pathlib.Path(r"${{ runner.temp }}\wasi-sdk.tar.gz")
+            dest = pathlib.Path(r"${{ runner.temp }}\wasi-sdk")
+            dest.mkdir(parents=True, exist_ok=True)
 
-with tarfile.open(archive, "r:gz") as tf:
-    for member in tf.getmembers():
-        parts = pathlib.PurePosixPath(member.name).parts
-        if len(parts) <= 1:
-            continue
-        member.name = str(pathlib.PurePosixPath(*parts[1:]))
-        tf.extract(member, dest)
+            with tarfile.open(archive, "r:gz") as tf:
+                for member in tf.getmembers():
+                    parts = pathlib.PurePosixPath(member.name).parts
+                    if len(parts) <= 1:
+                        continue
+                    member.name = str(pathlib.PurePosixPath(*parts[1:]))
+                    tf.extract(member, dest)
 PY
           else
             mkdir -p "${{ runner.temp }}/wasi-sdk"
