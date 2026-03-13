@@ -350,7 +350,10 @@ class BatchRunner:
         """Continuously transfer stdout lines to a queue for cross-platform timeouts."""
         try:
             while self.proc and self.proc.stdout:
-                line = self.proc.stdout.readline()
+                try:
+                    line = self.proc.stdout.readline()
+                except (OSError, ValueError):
+                    break
                 if not line:
                     break
                 self._stdout_queue.put(line.strip())
@@ -518,14 +521,23 @@ class BatchRunner:
             return (False, str(e))
 
     def _cleanup_proc(self):
-        """Close all pipes on the process to avoid BrokenPipeError on GC."""
-        if self.proc:
-            for pipe in (self.proc.stdin, self.proc.stdout, self.proc.stderr):
-                try:
-                    if pipe:
-                        pipe.close()
-                except Exception:
-                    pass
+        """Clean up process-owned resources without racing the stdout pump on Windows."""
+        proc = self.proc
+        thread = self._stdout_thread
+        if proc and proc.stdin:
+            try:
+                proc.stdin.close()
+            except Exception:
+                pass
+        if thread and thread.is_alive():
+            thread.join(timeout=0.2)
+        if proc and proc.stderr:
+            try:
+                proc.stderr.close()
+            except Exception:
+                pass
+        self._stdout_thread = None
+        self._stdout_queue = None
 
     def send_batch_cmd(self, cmd, timeout=5):
         """Send a raw batch command and return (success, response)."""
@@ -616,10 +628,15 @@ class BatchRunner:
     def close(self):
         if self.proc and self.proc.poll() is None:
             try:
-                self.proc.stdin.close()
+                if self.proc.stdin:
+                    self.proc.stdin.close()
                 self.proc.wait(timeout=5)
             except Exception:
                 self.proc.kill()
+                try:
+                    self.proc.wait(timeout=5)
+                except Exception:
+                    pass
         self._cleanup_proc()
         self.proc = None
 
