@@ -740,7 +740,7 @@ def run_test_file(json_path, verbose=False, wat_mode=False, wat_dir=None):
     wat_stats is a dict with keys: conv_ok, conv_fail, conv_fail_files (list).
     Only populated when wat_mode=True.
     """
-    with open(json_path) as f:
+    with open(json_path, encoding="utf-8") as f:
         data = json.load(f)
 
     test_dir = os.path.dirname(json_path)
