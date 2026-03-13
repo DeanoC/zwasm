@@ -1302,10 +1302,11 @@ fn cmdBatch(allocator: Allocator, wasm_bytes: []const u8, imports: []const types
     }
 
     while (true) {
-        const line = r.takeDelimiter('\n') catch |err| switch (err) {
+        const raw_line = r.takeDelimiter('\n') catch |err| switch (err) {
             error.StreamTooLong => continue,
             else => break,
         } orelse break;
+        const line = std.mem.trimRight(u8, raw_line, "\r");
 
         // Skip empty lines
         if (line.len == 0) continue;
